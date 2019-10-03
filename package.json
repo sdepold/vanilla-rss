@@ -1,0 +1,49 @@
+{
+    "author": "Sascha Depold <sascha@depold.com> (http://depold.com)",
+    "name": "vanilla-rss",
+    "description": "An easy-to-use vanilla JavaScript library to read and render RSS feeds.",
+    "version": "1.0.0",
+    "homepage": "https://github.com/sdepold/vanilla-rss",
+    "keywords": [
+        "rss",
+        "vanilla",
+        "parsing",
+        "render",
+        "atom",
+        "xml"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git://github.com/sdepold/vanilla-rss.git"
+    },
+    "contributors": [
+        {
+            "name": "Sascha Depold",
+            "email": "sascha@depold.com"
+        }
+    ],
+    "main": "src/rss.js",
+    "scripts": {
+        "test": "npm run minify && mocha test/*.test.js -t 10000",
+        "minify": "java -jar utils/compiler.jar src/rss.js --js_output_file=dist/rss.min.js",
+        "lint": "eslint src/**/*.js test/**/*.js",
+        "prepack": "npm run version:sync && npm run compile",
+        "version:sync": "node utils/sync-version"
+    },
+    "engines": {
+        "node": ">=v0.4.8"
+    },
+    "dependencies": {},
+    "devDependencies": {
+        "chai": "^4.2.0",
+        "eslint": "^6.4.0",
+        "jsdom": "^15.1.1",
+        "mocha": "^6.2.0",
+        "moment": "^2.14.1",
+        "node-fetch": "^2.6.0",
+        "rollup": "^1.22.0",
+        "rollup-plugin-uglify": "^6.0.3",
+        "sinon": "^7.5.0"
+    },
+    "license": "MIT"
+}
