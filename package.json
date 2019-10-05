@@ -24,7 +24,8 @@
     ],
     "main": "src/rss.js",
     "scripts": {
-        "test": "npm run minify && mocha test/*.test.js -t 10000",
+        "test": "npm run minify && npm run test:run",
+        "test:run": "mocha test/*.test.js -t 10000",
         "minify": "node utils/minify",
         "lint": "eslint src/**/*.js test/**/*.js",
         "prepack": "npm run version:sync && npm run compile",

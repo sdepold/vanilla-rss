@@ -6,40 +6,36 @@ const fetch = require('node-fetch');
 const moment = global.moment = require('moment');
 const { stub } = require('sinon');
 const { version } = require('../package.json');
+const RSS = require('../dist/rss.node.min');
 
 describe('rss', () => {
-    let $, element, originalGetJson;
+    let $, element, originalGetJson, window;
 
     const feedUrl = 'https://www.contentful.com/blog/feed.xml';
-    const fakeGetJson = (content) => {
-        originalGetJson = $.getJSON;
-
-        $.getJSON = function (url, callback) {
-            callback({
-                responseData: {
-                    feed: {
-                        entries: [{
-                            content: content,
-                            contentSnippet: content
-                        }]
-                    }
+    const fakeGetJson = (rss, content) => {
+        rss._fetchFeed = async () => ({
+            responseData: {
+                feed: {
+                    entries: [{
+                        content: content,
+                        contentSnippet: content
+                    }]
                 }
-            });
-        };
+            }
+        });
     };
 
     before(() => {
-        const { window } = new JSDOM(`<!DOCTYPE html>`);
+        const jsdom = new JSDOM(`<!DOCTYPE html>`);
 
-        $ = global.jQuery = require('jquery')(window);
-        $.getJSON = (url, callback) =>
-            fetch(url.replace('callback=?', '')).then(res => res.json()).then(callback);
-
-        require('../src/jquery.rss');
+        global.window = window = jsdom.window;
+        global.document = window.document;
+        global.fetch = fetch;
     });
 
     beforeEach(() => {
-        element = $('<div>').appendTo($('body'));
+        element = window.document.createElement('div');
+        window.document.body.appendChild(element);
     });
 
     afterEach(() => {
@@ -49,117 +45,87 @@ describe('rss', () => {
         }
     });
 
-    it('renders an unordered list by default', function (done) {
-        var $container = element;
-
-        rss($container, feedUrl, {}, function () {
-            var renderedContent = $container.html().replace(/\n/g, '');
+    it('renders an unordered list by default', () => {
+        return new RSS(element, feedUrl, {}).render().then(function () {
+            var renderedContent = element.innerHTML.replace(/\n/g, '');
 
             expect(renderedContent).to.match(/<ul>.*<\/ul>/);
-            done();
         });
     });
 
-    // it('renders 2 list entries if limit is set to 2', function (done) {
-    //     var $container = element;
+    it('renders 2 list entries if limit is set to 2', () => {
+        return new RSS(element, feedUrl, {
+            limit: 2
+        }).render().then(() => {
+            expect(element.querySelectorAll('li').length).to.equal(2);
+        });
+    });
 
-    //     $container.rss(feedUrl, {
-    //         limit: 2
-    //     }, function () {
-    //         expect($('li', $container).length).to.equal(2);
-    //         done();
-    //     });
-    // });
+    it('renders the defined entry template', () => {
+        return new RSS(element, feedUrl, {
+            limit: 1,
+            entryTemplate: '<li>foo</li>'
+        }).render().then(() => {
+            var renderedContent = element.outerHTML.split('\n').map(s => s.trim()).join('').trim();
 
-    // it('renders the defined entry template', function (done) {
-    //     var $container = element;
+            expect(renderedContent).to.match(/<ul><li>foo<\/li><\/ul>/);
+        });
+    });
 
-    //     $container.rss(feedUrl, {
-    //         limit: 1,
-    //         entryTemplate: '<li>foo</li>'
-    //     }, function () {
-    //         var renderedContent = $container.html().split('\n').map(function (s) {
-    //             return s.trim();
-    //         }).join('').trim();
+    it('renders the defined layout template', () => {
+        return new RSS(element, feedUrl, {
+            limit: 1,
+            layoutTemplate: 'foo<ul>{entries}</ul>bar'
+        }).render().then(() => {
+            var renderedContent = element.innerHTML.replace(/\n/g, '');
 
-    //         expect(renderedContent).to.match(/<ul><li>foo<\/li><\/ul>/);
-    //         done();
-    //     });
-    // });
+            expect(renderedContent).to.match(/foo<ul>.*<\/ul>/);
+        });
+    });
 
-    // it('renders the defined layout template', function (done) {
-    //     var $container = element;
+    it('supports custom tokens', () => {
+        return new RSS(element, feedUrl, {
+            limit: 1,
+            entryTemplate: '<li>{myCustomStaticToken} {myCustomDynamicToken}</li>',
+            tokens: {
+                myCustomStaticToken: 'static',
+                myCustomDynamicToken: function () {
+                    return 'dynamic';
+                }
+            }
+        }).render().then(() => {
+            var renderedContent = element.outerHTML.split('\n').map(s => s.trim()).join('').trim();
 
-    //     $container.rss(feedUrl, {
-    //         limit: 1,
-    //         layoutTemplate: 'foo<ul>{entries}</ul>bar'
-    //     }, function () {
-    //         var renderedContent = $container.html().replace(/\n/g, '');
+            expect(renderedContent).to.match(new RegExp('<ul><li>static dynamic</li></ul>'));
+        });
+    });
 
-    //         expect(renderedContent).to.match(/foo<ul>.*<\/ul>/);
-    //         done();
-    //     });
-    // });
+    it('removes p-tags but not the content', () => {
+        const rss = new RSS(element, feedUrl, {
+            limit: 1,
+            entryTemplate: '<li>{bodyPlain}</li>'
+        });
 
-    // it('supports custom tokens', function (done) {
-    //     var $container = element;
+        fakeGetJson(rss, '<p>May the fourth be with you!</p>');
 
-    //     $container.rss(feedUrl, {
-    //         limit: 1,
-    //         entryTemplate: '<li>{myCustomStaticToken} {myCustomDynamicToken}</li>',
-    //         tokens: {
-    //             myCustomStaticToken: 'static',
-    //             myCustomDynamicToken: function () {
-    //                 return 'dynamic';
-    //             }
-    //         }
-    //     }, function () {
-    //         var renderedContent = $container.html().split('\n').map(function (s) {
-    //             return s.trim();
-    //         }).join('').trim();
+        return rss.render().then(() => {
+            var renderedContent = element.innerHTML.split('\n').map(function (s) {
+                return s.trim();
+            }).join('').trim();
 
-    //         expect(renderedContent).to.match(new RegExp('<ul><li>static dynamic</li></ul>'));
-    //         done();
-    //     });
-    // });
+            expect(renderedContent).to.match(/<ul><li>May the fourth be with you!<\/li><\/ul>/);
+        });
+    });
 
-    // it('removes p-tags but not the content', function (done) {
-    //     var $container = element;
+    it('calls the error callback if something went wrong', () => {
+        return new Promise((resolve, reject) => {
+            new RSS(element, 'https://google.com').render().then(reject, resolve);
+        });
+    });
 
-    //     fakeGetJson('<p>May the fourth be with you!</p>');
-
-    //     $container.rss(feedUrl, {
-    //         limit: 1,
-    //         entryTemplate: '<li>{bodyPlain}</li>'
-    //     }, function () {
-    //         var renderedContent = $container.html().split('\n').map(function (s) {
-    //             return s.trim();
-    //         }).join('').trim();
-
-    //         expect(renderedContent).to.match(/<ul><li>May the fourth be with you!<\/li><\/ul>/);
-    //         done();
-    //     });
-    // });
-
-    // it('calls the error callback if something went wrong', function (done) {
-    //     element.rss('https://google.com', {
-    //         error: function () {
-    //             expect(1).to.equal(1);
-    //             done();
-    //         }
-    //     });
-    // });
-
-    // it('calls the success callback', function (done) {
-    //     element.rss(feedUrl, {
-    //         limit: 1,
-    //         layoutTemplate: 'fnord',
-    //         success: function () {
-    //             expect(1).to.equal(1);
-    //             done();
-    //         }
-    //     });
-    // });
+    it('calls the success callback', () => {
+        return new RSS(element, feedUrl, { limit: 1 }).render();
+    });
 
     // it('renders the defined entry template in the layout template', function (done) {
     //     var $container = element;
@@ -168,8 +134,8 @@ describe('rss', () => {
     //         limit: 1,
     //         entryTemplate: '<li>bazinga</li>',
     //         layoutTemplate: '<ul><li>topic</li>{entries}</ul>'
-    //     }, function () {
-    //         var renderedContent = $container.html().replace(/\n/g, '');
+    //     }).render().then( () => {
+    //         var renderedContent = element.innerHTML.replace(/\n/g, '');
 
     //         expect(renderedContent).to.equal('<ul><li>topic</li><li>bazinga</li></ul>');
     //         done();
@@ -183,7 +149,7 @@ describe('rss', () => {
     //         limit: 1,
     //         layoutTemplate: '{entries}',
     //         entryTemplate: '<tr><td>{title}</td></tr>'
-    //     }, function () {
+    //     }).render().then( () => {
     //         var renderedContent = $container[0].outerHTML.replace(/\n/g, '');
 
     //         expect(renderedContent).to.equal('<table><tr><td>Why I’m going to the Ada Lovelace Festival (and you should, too!) </td></tr></table>');
@@ -271,8 +237,8 @@ describe('rss', () => {
     //                         return tokens.feed.title;
     //                     }
     //                 }
-    //             }, function () {
-    //                 var renderedContent = $container.html().replace(/\n/g, '');
+    //             }).render().then( () => {
+    //                 var renderedContent = element.innerHTML.replace(/\n/g, '');
 
     //                 expect(renderedContent).to.equal('<ul><li>Contentful - Blog</li></ul>');
     //                 done();
@@ -288,8 +254,8 @@ describe('rss', () => {
     //                 $container.rss(feedUrl, {
     //                     limit: 1,
     //                     entryTemplate: '<li>{bodyPlain}</li>'
-    //                 }, function () {
-    //                     var renderedContent = $container.html().split('\n').map(function (s) {
+    //                 }).render().then( () => {
+    //                     var renderedContent = element.innerHTML.split('\n').map(function (s) {
     //                         return s.trim();
     //                     }).join('').trim();
 
@@ -417,10 +383,10 @@ describe('rss', () => {
     //                     $container.rss(feedUrl, {
     //                         limit: 1,
     //                         entryTemplate: '<li>{bodyPlain}</li>'
-    //                     }, function () {
+    //                     }).render().then( () => {
     //                         $.getJSON = self.originalGetJSON;
 
-    //                         var renderedContent = $container.html().split('\n').map(function (s) {
+    //                         var renderedContent = element.innerHTML.split('\n').map(function (s) {
     //                             return s.trim();
     //                         }).join('').trim();
 
@@ -437,8 +403,8 @@ describe('rss', () => {
     //         it('renders english dates by default', function (done) {
     //             var $container = element;
 
-    //             $container.rss(feedUrl, {}, function () {
-    //                 var renderedContent = $container.html().replace(/\n/g, '');
+    //             $container.rss(feedUrl, {}).render().then( () => {
+    //                 var renderedContent = element.innerHTML.replace(/\n/g, '');
 
     //                 expect(renderedContent).to.match(/<a href=".*">\[.*(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday) .*\].*<\/a>/);
     //                 done();
@@ -448,8 +414,8 @@ describe('rss', () => {
     //         it('renders german dates if enabled', function (done) {
     //             var $container = element;
 
-    //             $container.rss(feedUrl, { dateLocale: 'de' }, function () {
-    //                 var renderedContent = $container.html().replace(/\n/g, '');
+    //             $container.rss(feedUrl, { dateLocale: 'de' }).render().then( () => {
+    //                 var renderedContent = element.innerHTML.replace(/\n/g, '');
 
     //                 expect(renderedContent).to.match(/<a href=".*">\[.*(Montag|Dienstag|Mittwoch|Donnerstag|Freitag|Samstag|Sonntag).*\].*<\/a>/);
     //                 done();

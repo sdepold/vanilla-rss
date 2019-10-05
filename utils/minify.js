@@ -1,14 +1,27 @@
 const { rollup } = require("rollup");
 const { terser } = require("rollup-plugin-terser");
 const { writeFileSync } = require('fs');
+const versions = [
+    {
+        options: { format: 'iife', name: 'RSS' },
+        name: 'global'
+    }, {
+        options: { format: 'cjs', name: 'RSS' },
+        name: 'node'
+    }
+];
 
 (async () => {
     const bundle = await rollup({
         input: __dirname + "/../src/rss.js",
         plugins: [terser()]
     });
-    const { output } = await bundle.generate({ format: 'iife', name: 'RSS' });
 
-    writeFileSync(__dirname + '/../dist/rss.min.js', output[0].code);
-    console.log(__dirname + '/../dist/rss.min.js was updated!');
+    versions.forEach((async ({ options, name }) => {
+        const { output } = await bundle.generate(options);
+        const outputPath = `${__dirname}/../dist/rss.${name}.min.js`;
+
+        writeFileSync(outputPath, output[0].code);
+        console.log(`${outputPath} was updated!`);
+    }));
 })();

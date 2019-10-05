@@ -46,7 +46,7 @@ export default class RSS {
             offsetStart: false,
             offsetEnd: false,
             error: function (e) {
-                console.log('Vanilla RSS: An error ocurred!', e);
+                console.log('Vanilla RSS: An error ocurred!', e, e.stack);
             },
             onData: function () { },
             success: function () { },
@@ -57,7 +57,6 @@ export default class RSS {
     render() {
         return new Promise(async (resolve, reject) => {
             const feedData = await this._load();
-            console.log(feedData);
 
             try {
                 this.feed = feedData.responseData.feed;
@@ -77,10 +76,9 @@ export default class RSS {
                 if (typeof this.options.onData === 'function') {
                     this.options.onData.call(this);
                 }
-                console.log(html)
                 const container = elementIs(html.layout, 'entries')
                     ? html.layout
-                    : createElementFromHTML(`<entries>$(html.layout)</entries>`)
+                    : html.layout.querySelector('entries')
 
                 this._appendEntriesAndApplyEffects(container, html.entries);
             }
@@ -98,10 +96,10 @@ export default class RSS {
             var $html = this._wrapContent(entry);
 
             if (this.options.effect === 'show') {
-                target.before($html);
+                target.insertAdjacentHTML('beforebegin', $html.outerHTML);
             } else {
                 $html.style.display = 'none';
-                target.before($html);
+                target.insertAdjacentHTML('beforebegin', $html.outerHTML);
                 this._applyEffect($html, this.options.effect);
             }
         });
@@ -112,7 +110,7 @@ export default class RSS {
     _wrapContent(content) {
         if (content.trim().indexOf('<') !== 0) {
             // the content has no html => create a surrounding div
-            return createElementFromHTML('<div>' + content + '</div>');
+            return createElementFromHTML(`<div>${content}</div>`);
         } else {
             // the content has html => don't touch it
             return createElementFromHTML(content);
@@ -147,9 +145,8 @@ export default class RSS {
                 'Content-Type': 'application/json'
             }
         });
-        const json = await data.json();
 
-        return json;
+        return await data.json();
     }
 
     _generateHTMLForEntries() {
@@ -246,7 +243,7 @@ export default class RSS {
     _evaluateStringForEntry(string, entry) {
         var result = string;
 
-        string.match(/(\{.*?\})/g).forEach((token) => {
+        (string.match(/(\{.*?\})/g) || []).forEach((token) => {
             result = result.replace(token, this._getValueForToken(token, entry));
         });
 
