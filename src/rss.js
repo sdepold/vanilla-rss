@@ -1,36 +1,4 @@
-var RSS = function (target, url, options, callback) {
-    this.target = target;
-    this.url = url;
-    this.html = [];
-    this.effectQueue = [];
-    this.version = '3.4.1'; // Synced version
-
-    this.options = $.extend({
-        ssl: false,
-        host: 'www.feedrapp.info',
-        support: true,
-        limit: null,
-        key: null,
-        layoutTemplate: '<ul>{entries}</ul>',
-        entryTemplate: '<li><a href="{url}">[{author}@{date}] {title}</a><br/>{shortBodyPlain}</li>',
-        tokens: {},
-        outputMode: 'json',
-        dateFormat: 'dddd MMM Do',
-        dateLocale: 'en',
-        effect: 'show',
-        offsetStart: false,
-        offsetEnd: false,
-        error: function () {
-            console.log('jQuery RSS: url doesn\'t link to RSS-Feed');
-        },
-        onData: function () { },
-        success: function () { }
-    }, options || {});
-
-    this.callback = callback || this.options.success;
-};
-
-RSS.htmlTags = [
+const HTML_TAGS = [
     'doctype', 'html', 'head', 'title', 'base', 'link', 'meta', 'style', 'script', 'noscript',
     'body', 'article', 'nav', 'aside', 'section', 'header', 'footer', 'h1-h6', 'hgroup', 'address',
     'p', 'hr', 'pre', 'blockquote', 'ol', 'ul', 'li', 'dl', 'dt', 'dd', 'figure', 'figcaption',
@@ -43,289 +11,333 @@ RSS.htmlTags = [
     'rt', 'rp', 'span', 'br', 'wbr'
 ];
 
-RSS.prototype.load = function (callback) {
-    var apiProtocol = 'http' + (this.options.ssl ? 's' : '');
-    var apiHost = apiProtocol + '://' + this.options.host;
-    var apiUrl = apiHost + '?support=' + this.options.support + '&version=' + this.version + '&callback=?&q=' + encodeURIComponent(this.url);
+function createElementFromHTML(htmlString) {
+    var div = document.createElement('div');
+    div.innerHTML = htmlString.trim();
 
-    // set limit to offsetEnd if offset has been set
-    if (this.options.offsetStart && this.options.offsetEnd) {
-        this.options.limit = this.options.offsetEnd;
+    // Change this to div.childNodes to support multiple top-level nodes
+    return div.firstChild;
+}
+
+function elementIs(node, tagName) {
+    return node.tagName.toLowerCase() === tagName.toLowerCase();
+}
+
+export default class RSS {
+    constructor(target, url, options = {}) {
+        this.version = '1.0.0'; // Synced version
+        this.target = target;
+        this.url = url;
+        this.html = [];
+        this.effectQueue = [];
+        this.options = {
+            ssl: true,
+            host: 'www.feedrapp.info',
+            support: true,
+            limit: null,
+            key: null,
+            layoutTemplate: '<ul>{entries}</ul>',
+            entryTemplate: '<li><a href="{url}">[{author}@{date}] {title}</a><br/>{shortBodyPlain}</li>',
+            tokens: {},
+            outputMode: 'json',
+            dateFormat: 'dddd MMM Do',
+            dateLocale: 'en',
+            effect: 'show',
+            offsetStart: false,
+            offsetEnd: false,
+            error: function (e) {
+                console.log('Vanilla RSS: An error ocurred!', e);
+            },
+            onData: function () { },
+            success: function () { },
+            ...options
+        };
     }
 
-    if (this.options.limit !== null) {
-        apiUrl += '&num=' + this.options.limit;
-    }
+    render() {
+        return new Promise(async (resolve, reject) => {
+            const feedData = await this._load();
+            console.log(feedData);
 
-    if (this.options.key !== null) {
-        apiUrl += '&key=' + this.options.key;
-    }
+            try {
+                this.feed = feedData.responseData.feed;
+                this.entries = feedData.responseData.feed.entries;
+            } catch (e) {
+                this.entries = [];
+                this.feed = null;
 
-    $.getJSON(apiUrl, callback);
-};
-
-RSS.prototype.render = function () {
-    var self = this;
-
-    this.load(function (data) {
-        try {
-            self.feed = data.responseData.feed;
-            self.entries = data.responseData.feed.entries;
-        } catch (e) {
-            self.entries = [];
-            self.feed = null;
-            return self.options.error.call(self);
-        }
-
-        var html = self.generateHTMLForEntries();
-
-        self.target.append(html.layout);
-
-        if (html.entries.length !== 0) {
-            if ($.isFunction(self.options.onData)) {
-                self.options.onData.call(self);
+                return reject(e);
             }
 
-            var container = $(html.layout).is('entries') ? html.layout : $('entries', html.layout);
+            const html = this._generateHTMLForEntries();
 
-            self.appendEntriesAndApplyEffects(container, html.entries);
-        }
+            this.target.append(html.layout);
 
-        if (self.effectQueue.length > 0) {
-            self.executeEffectQueue(self.callback);
-        } else if ($.isFunction(self.callback)) {
-            self.callback.call(self);
-        }
-    });
-};
+            if (html.entries.length !== 0) {
+                if (typeof this.options.onData === 'function') {
+                    this.options.onData.call(this);
+                }
+                console.log(html)
+                const container = elementIs(html.layout, 'entries')
+                    ? html.layout
+                    : createElementFromHTML(`<entries>$(html.layout)</entries>`)
 
-RSS.prototype.appendEntriesAndApplyEffects = function (target, entries) {
-    var self = this;
+                this._appendEntriesAndApplyEffects(container, html.entries);
+            }
 
-    $.each(entries, function (idx, entry) {
-        var $html = self.wrapContent(entry);
+            if (this.effectQueue.length > 0) {
+                this._executeEffectQueue(this.callback);
+            } else {
+                resolve();
+            }
+        });
+    }
 
-        if (self.options.effect === 'show') {
-            target.before($html);
+    _appendEntriesAndApplyEffects(target, entries) {
+        entries.forEach(entry => {
+            var $html = this._wrapContent(entry);
+
+            if (this.options.effect === 'show') {
+                target.before($html);
+            } else {
+                $html.style.display = 'none';
+                target.before($html);
+                this._applyEffect($html, this.options.effect);
+            }
+        });
+
+        target.remove();
+    }
+
+    _wrapContent(content) {
+        if (content.trim().indexOf('<') !== 0) {
+            // the content has no html => create a surrounding div
+            return createElementFromHTML('<div>' + content + '</div>');
         } else {
-            $html.css({ display: 'none' });
-            target.before($html);
-            self.applyEffect($html, self.options.effect);
+            // the content has html => don't touch it
+            return createElementFromHTML(content);
         }
-    });
+    }
 
-    target.remove();
-};
+    _load() {
+        const apiProtocol = `http${this.options.ssl ? 's' : ''}`;
+        const apiHost = `${apiProtocol}://${this.options.host}`;
 
-RSS.prototype.generateHTMLForEntries = function () {
-    var self = this;
-    var result = { entries: [], layout: null };
+        let apiUrl = `${apiHost}?support=${this.options.support}&version=${this.version}&q=${encodeURIComponent(this.url)}`;
 
-    $(this.entries).each(function () {
-        var entry = this;
-        var offsetStart = self.options.offsetStart;
-        var offsetEnd = self.options.offsetEnd;
-        var evaluatedString;
+        // set limit to offsetEnd if offset has been set
+        if (this.options.offsetStart && this.options.offsetEnd) {
+            this.options.limit = this.options.offsetEnd;
+        }
 
-        // offset required
-        if (offsetStart && offsetEnd) {
-            if (index >= offsetStart && index <= offsetEnd) {
-                if (self.isRelevant(entry, result.entries)) {
-                    evaluatedString = self.evaluateStringForEntry(
-                        self.options.entryTemplate, entry
+        if (this.options.limit !== null) {
+            apiUrl += `&num=${this.options.limit}`;
+        }
+
+        if (this.options.key !== null) {
+            apiUrl += `&key=${this.options.key}`;
+        }
+
+        return this._fetchFeed(apiUrl);
+    }
+
+    async _fetchFeed(apiUrl) {
+        const data = await fetch(apiUrl, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        const json = await data.json();
+
+        return json;
+    }
+
+    _generateHTMLForEntries() {
+        const result = { entries: [], layout: null };
+
+        this.entries.forEach((entry, index) => {
+            const offsetStart = this.options.offsetStart;
+            const offsetEnd = this.options.offsetEnd;
+            let evaluatedString;
+
+            // offset required
+            if (offsetStart && offsetEnd) {
+                if (index >= offsetStart && index <= offsetEnd) {
+                    if (this._isRelevant(entry, result.entries)) {
+                        evaluatedString = this._evaluateStringForEntry(
+                            this.options.entryTemplate, entry
+                        );
+
+                        result.entries.push(evaluatedString);
+                    }
+                }
+            } else {
+                // no offset
+                if (this._isRelevant(entry, result.entries)) {
+                    evaluatedString = this._evaluateStringForEntry(
+                        this.options.entryTemplate, entry
                     );
 
                     result.entries.push(evaluatedString);
                 }
             }
+        });
+
+        if (!!this.options.entryTemplate) {
+            // we have an entryTemplate
+            result.layout = this._wrapContent(
+                this.options.layoutTemplate.replace('{entries}', '<entries></entries>')
+            );
         } else {
-            // no offset
-            if (self.isRelevant(entry, result.entries)) {
-                evaluatedString = self.evaluateStringForEntry(
-                    self.options.entryTemplate, entry
-                );
+            // no entryTemplate available
+            result.layout = this._wrapContent('<div><entries></entries></div>');
+        }
 
-                result.entries.push(evaluatedString);
+        return result;
+    }
+
+    _isRelevant(entry, entries) {
+        const tokenMap = this._getTokenMap(entry);
+
+        if (this.options.filter) {
+            if (this.options.filterLimit && (this.options.filterLimit === entries.length)) {
+                return false;
+            } else {
+                return this.options.filter(entry, tokenMap);
             }
-        }
-    });
-
-    if (!!this.options.entryTemplate) {
-        // we have an entryTemplate
-        result.layout = this.wrapContent(
-            this.options.layoutTemplate.replace('{entries}', '<entries></entries>')
-        );
-    } else {
-        // no entryTemplate available
-        result.layout = this.wrapContent('<div><entries></entries></div>');
-    }
-
-    return result;
-};
-
-RSS.prototype.wrapContent = function (content) {
-    if (($.trim(content).indexOf('<') !== 0)) {
-        // the content has no html => create a surrounding div
-        return $('<div>' + content + '</div>');
-    } else {
-        // the content has html => don't touch it
-        return $(content);
-    }
-};
-
-RSS.prototype.applyEffect = function ($element, effect, callback) {
-    var self = this;
-
-    switch (effect) {
-        case 'slide':
-            $element.slideDown('slow', callback);
-            break;
-        case 'slideFast':
-            $element.slideDown(callback);
-            break;
-        case 'slideSynced':
-            self.effectQueue.push({ element: $element, effect: 'slide' });
-            break;
-        case 'slideFastSynced':
-            self.effectQueue.push({ element: $element, effect: 'slideFast' });
-            break;
-    }
-};
-
-RSS.prototype.executeEffectQueue = function (callback) {
-    var self = this;
-
-    this.effectQueue.reverse();
-
-    var executeEffectQueueItem = function () {
-        var item = self.effectQueue.pop();
-
-        if (item) {
-            self.applyEffect(item.element, item.effect, executeEffectQueueItem);
-        } else if (callback) {
-            callback();
-        }
-    };
-
-    executeEffectQueueItem();
-};
-
-RSS.prototype.evaluateStringForEntry = function (string, entry) {
-    var result = string;
-    var self = this;
-
-    $(string.match(/(\{.*?\})/g)).each(function () {
-        var token = this.toString();
-
-        result = result.replace(token, self.getValueForToken(token, entry));
-    });
-
-    return result;
-};
-
-RSS.prototype.isRelevant = function (entry, entries) {
-    var tokenMap = this.getTokenMap(entry);
-
-    if (this.options.filter) {
-        if (this.options.filterLimit && (this.options.filterLimit === entries.length)) {
-            return false;
         } else {
-            return this.options.filter(entry, tokenMap);
+            return true;
         }
-    } else {
-        return true;
     }
-};
 
-RSS.prototype.getFormattedDate = function (dateString) {
-    // If a custom formatting function is provided, use that.
-    if (this.options.dateFormatFunction) {
-        return this.options.dateFormatFunction(dateString);
-    } else if (typeof moment !== 'undefined') {
-        // If moment.js is available and dateFormatFunction is not overriding it,
-        // use it to format the date.
-        var date = moment(new Date(dateString));
+    _applyEffect($element, effect, callback) {
+        switch (effect) {
+            case 'slide':
+                // $element.slideDown('slow', callback);
+                break;
+            case 'slideFast':
+                // $element.slideDown(callback);
+                break;
+            case 'slideSynced':
+                // this.effectQueue.push({ element: $element, effect: 'slide' });
+                break;
+            case 'slideFastSynced':
+                // this.effectQueue.push({ element: $element, effect: 'slideFast' });
+                break;
+        }
+    }
 
-        if (date.locale) {
-            date = date.locale(this.options.dateLocale);
+    _executeEffectQueue(callback) {
+        this.effectQueue.reverse();
+
+        var executeEffectQueueItem = () => {
+            var item = this.effectQueue.pop();
+
+            if (item) {
+                this._applyEffect(item.element, item.effect, executeEffectQueueItem);
+            } else if (callback) {
+                callback();
+            }
+        };
+
+        executeEffectQueueItem();
+    }
+
+    _evaluateStringForEntry(string, entry) {
+        var result = string;
+
+        string.match(/(\{.*?\})/g).forEach((token) => {
+            result = result.replace(token, this._getValueForToken(token, entry));
+        });
+
+        return result;
+    }
+
+    _getFormattedDate(dateString) {
+        // If a custom formatting function is provided, use that.
+        if (this.options.dateFormatFunction) {
+            return this.options.dateFormatFunction(dateString);
+        } else if (typeof moment !== 'undefined') {
+            // If moment.js is available and dateFormatFunction is not overriding it,
+            // use it to format the date.
+            var date = moment(new Date(dateString));
+
+            if (date.locale) {
+                date = date.locale(this.options.dateLocale);
+            } else {
+                date = date.lang(this.options.dateLocale);
+            }
+
+            return date.format(this.options.dateFormat);
         } else {
-            date = date.lang(this.options.dateLocale);
+            // If all else fails, just use the date as-is.
+            return dateString;
+        }
+    }
+
+    _getTokenMap(entry) {
+        if (!this.feedTokens) {
+            var feed = JSON.parse(JSON.stringify(this.feed));
+
+            delete feed.entries;
+            this.feedTokens = feed;
         }
 
-        return date.format(this.options.dateFormat);
-    } else {
-        // If all else fails, just use the date as-is.
-        return dateString;
+        return {
+            feed: this.feedTokens,
+            url: entry.link,
+            author: entry.author,
+            date: this._getFormattedDate(entry.publishedDate),
+            title: entry.title,
+            body: entry.content,
+            shortBody: entry.contentSnippet,
+
+            bodyPlain: (function (entry) {
+                var result = entry.content
+                    .replace(/<script[\\r\\\s\S]*<\/script>/mgi, '')
+                    .replace(/<\/?[^>]+>/gi, '');
+
+                for (var i = 0; i < HTML_TAGS.length; i++) {
+                    result = result.replace(new RegExp('<' + HTML_TAGS[i], 'gi'), '');
+                }
+
+                return result;
+            })(entry),
+
+            shortBodyPlain: entry.contentSnippet.replace(/<\/?[^>]+>/gi, ''),
+            index: this.entries.includes(entry),
+            totalEntries: this.entries.length,
+
+            teaserImage: (function (entry) {
+                try {
+                    return entry.content.match(/(<img.*?>)/gi)[0];
+                }
+                catch (e) {
+                    return '';
+                }
+            })(entry),
+
+            teaserImageUrl: (function (entry) {
+                try {
+                    return entry.content.match(/(<img.*?>)/gi)[0].match(/src="(.*?)"/)[1];
+                }
+                catch (e) {
+                    return '';
+                }
+            })(entry),
+            ...this.options.tokens
+        };
     }
-};
 
-RSS.prototype.getTokenMap = function (entry) {
-    if (!this.feedTokens) {
-        var feed = JSON.parse(JSON.stringify(this.feed));
+    _getValueForToken(_token, entry) {
+        var tokenMap = this._getTokenMap(entry);
+        var token = _token.replace(/[\{\}]/g, '');
+        var result = tokenMap[token];
 
-        delete feed.entries;
-        this.feedTokens = feed;
+        if (typeof result !== 'undefined') {
+            return ((typeof result === 'function') ? result(entry, tokenMap) : result);
+        } else {
+            throw new Error('Unknown token: ' + _token + ', url:' + this.url);
+        }
     }
-
-    return $.extend({
-        feed: this.feedTokens,
-        url: entry.link,
-        author: entry.author,
-        date: this.getFormattedDate(entry.publishedDate),
-        title: entry.title,
-        body: entry.content,
-        shortBody: entry.contentSnippet,
-
-        bodyPlain: (function (entry) {
-            var result = entry.content
-                .replace(/<script[\\r\\\s\S]*<\/script>/mgi, '')
-                .replace(/<\/?[^>]+>/gi, '');
-
-            for (var i = 0; i < RSS.htmlTags.length; i++) {
-                result = result.replace(new RegExp('<' + RSS.htmlTags[i], 'gi'), '');
-            }
-
-            return result;
-        })(entry),
-
-        shortBodyPlain: entry.contentSnippet.replace(/<\/?[^>]+>/gi, ''),
-        index: $.inArray(entry, this.entries),
-        totalEntries: this.entries.length,
-
-        teaserImage: (function (entry) {
-            try {
-                return entry.content.match(/(<img.*?>)/gi)[0];
-            }
-            catch (e) {
-                return '';
-            }
-        })(entry),
-
-        teaserImageUrl: (function (entry) {
-            try {
-                return entry.content.match(/(<img.*?>)/gi)[0].match(/src="(.*?)"/)[1];
-            }
-            catch (e) {
-                return '';
-            }
-        })(entry)
-    }, this.options.tokens);
-};
-
-RSS.prototype.getValueForToken = function (_token, entry) {
-    var tokenMap = this.getTokenMap(entry);
-    var token = _token.replace(/[\{\}]/g, '');
-    var result = tokenMap[token];
-
-    if (typeof result !== 'undefined') {
-        return ((typeof result === 'function') ? result(entry, tokenMap) : result);
-    } else {
-        throw new Error('Unknown token: ' + _token + ', url:' + this.url);
-    }
-};
-
-$.fn.rss = function (url, options, callback) {
-    new RSS(this, url, options, callback).render();
-    return this; // Implement chaining
-};
-module.export = RSS;
+}

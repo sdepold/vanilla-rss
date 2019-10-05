@@ -25,7 +25,7 @@
     "main": "src/rss.js",
     "scripts": {
         "test": "npm run minify && mocha test/*.test.js -t 10000",
-        "minify": "java -jar utils/compiler.jar src/rss.js --js_output_file=dist/rss.min.js",
+        "minify": "node utils/minify",
         "lint": "eslint src/**/*.js test/**/*.js",
         "prepack": "npm run version:sync && npm run compile",
         "version:sync": "node utils/sync-version"
@@ -42,6 +42,7 @@
         "moment": "^2.14.1",
         "node-fetch": "^2.6.0",
         "rollup": "^1.22.0",
+        "rollup-plugin-terser": "^5.1.2",
         "rollup-plugin-uglify": "^6.0.3",
         "sinon": "^7.5.0"
     },
