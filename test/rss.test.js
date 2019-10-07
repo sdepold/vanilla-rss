@@ -127,36 +127,32 @@ describe('rss', () => {
         return new RSS(element, feedUrl, { limit: 1 }).render();
     });
 
-    // it('renders the defined entry template in the layout template', function (done) {
-    //     var $container = element;
+    it('renders the defined entry template in the layout template', () => {
+        return new RSS(element, feedUrl, {
+            limit: 1,
+            entryTemplate: '<li>bazinga</li>',
+            layoutTemplate: '<ul><li>topic</li>{entries}</ul>'
+        }).render().then(() => {
+            var renderedContent = element.innerHTML.replace(/\n/g, '');
 
-    //     $container.rss(feedUrl, {
-    //         limit: 1,
-    //         entryTemplate: '<li>bazinga</li>',
-    //         layoutTemplate: '<ul><li>topic</li>{entries}</ul>'
-    //     }).render().then( () => {
-    //         var renderedContent = element.innerHTML.replace(/\n/g, '');
+            expect(renderedContent).to.equal('<ul><li>topic</li><li>bazinga</li></ul>');
+        });
+    });
 
-    //         expect(renderedContent).to.equal('<ul><li>topic</li><li>bazinga</li></ul>');
-    //         done();
-    //     });
-    // });
+    it('renders when layout template only contains the entries token', () => {
+        const table = document.createElement('table')
+        element.appendChild(table);
 
-    // it('renders when layout template only contains the entries token', function (done) {
-    //     var $container = $('<table>').appendTo(element);
+        return new RSS(table, feedUrl, {
+            limit: 1,
+            layoutTemplate: '{entries}',
+            entryTemplate: '<tr><td>{title}</td></tr>'
+        }).render().then(() => {
+            var renderedContent = table.outerHTML.replace(/\n/g, '');
 
-    //     $container.rss(feedUrl, {
-    //         limit: 1,
-    //         layoutTemplate: '{entries}',
-    //         entryTemplate: '<tr><td>{title}</td></tr>'
-    //     }).render().then( () => {
-    //         var renderedContent = $container[0].outerHTML.replace(/\n/g, '');
-
-    //         expect(renderedContent).to.equal('<table><tr><td>Why I’m going to the Ada Lovelace Festival (and you should, too!) </td></tr></table>');
-
-    //         done();
-    //     });
-    // });
+            expect(renderedContent).to.equal('<table><tbody><tr><td>Using fat bears to explain my take on the future of digital marketing</td></tr></tbody></table>');
+        });
+    });
 
     // it('sends the lib version during feedrapp requests', (done) => {
     //     const ajaxStub = stub($, 'getJSON').callsFake(function (apiUrl) {
