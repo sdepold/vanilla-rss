@@ -4,7 +4,7 @@ const sampleFeedParsed = require('./fixtures/contentful.rss.json');
 const { expect } = require('chai');
 const fetch = require('node-fetch');
 const moment = global.moment = require('moment');
-const { stub } = require('sinon');
+const { stub, spy } = require('sinon');
 const { version } = require('../package.json');
 const RSS = require('../dist/rss.node.min');
 
@@ -154,37 +154,37 @@ describe('rss', () => {
         });
     });
 
-    // it('sends the lib version during feedrapp requests', (done) => {
-    //     const ajaxStub = stub($, 'getJSON').callsFake(function (apiUrl) {
-    //         expect(apiUrl).to.match(new RegExp(`version=${version}`));
-    //         ajaxStub.restore();
-    //         done();
-    //     });
+    it('sends the lib version during feedrapp requests', () => {
+        const rss = new RSS(element, feedUrl, { ssl: true })
+        const fetchFeedSpy = spy(rss, '_fetchFeed');
 
-    //     element.rss(feedUrl, { ssl: true });
-    // });
+        return rss.render().then(()=>{
+            expect(fetchFeedSpy.getCall(0).args[0]).to.match(new RegExp(`version=${version}`));
+            fetchFeedSpy.restore();
+        });
+    });
 
-    // describe('support', () => {
-    //     it('sends the enables support by default', (done) => {
-    //         const ajaxStub = stub($, 'getJSON').callsFake(function (apiUrl) {
-    //             expect(apiUrl).to.match(/support=true/);
-    //             ajaxStub.restore();
-    //             done();
-    //         });
+    describe('support', () => {
+        it('sends the enabled support by default', () => {
+            const rss = new RSS(element, feedUrl)
+            const fetchFeedSpy = spy(rss, '_fetchFeed');
+    
+            return rss.render().then(()=>{
+                expect(fetchFeedSpy.getCall(0).args[0]).to.match(/support=true/);
+                fetchFeedSpy.restore();
+            });
+        });
 
-    //         element.rss(feedUrl, { ssl: true });
-    //     });
-
-    //     it('turns of support if configured respectively', (done) => {
-    //         const ajaxStub = stub($, 'getJSON').callsFake(function (apiUrl) {
-    //             expect(apiUrl).to.match(/support=false/);
-    //             ajaxStub.restore();
-    //             done();
-    //         });
-
-    //         element.rss(feedUrl, { ssl: true, support: false });
-    //     })
-    // });
+        it('turns of support if configured respectively', () => {
+            const rss = new RSS(element, feedUrl, { support: false })
+            const fetchFeedSpy = spy(rss, '_fetchFeed');
+    
+            return rss.render().then(()=>{
+                expect(fetchFeedSpy.getCall(0).args[0]).to.match(/support=false/);
+                fetchFeedSpy.restore();
+            });
+        })
+    });
 
     // describe('ssl', function () {
     //     it('rewrites the host to feedrapp.info if not specified differently', function (done) {
