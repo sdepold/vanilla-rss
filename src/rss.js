@@ -1,4 +1,5 @@
 import {HTML_TAGS} from './tags';
+import {slideDown} from './effects'
 
 function createElementFromHTML(htmlString) {
   let template = document.createElement("template");
@@ -208,10 +209,11 @@ export default class RSS {
   _applyEffect($element, effect, callback) {
     switch (effect) {
       case "slide":
-        // $element.slideDown('slow', callback);
+        // slow
+        // slideDown($element, callback)
         break;
       case "slideFast":
-        // $element.slideDown(callback);
+        // slideDown($element, callback)
         break;
       case "slideSynced":
         // this.effectQueue.push({ element: $element, effect: 'slide' });
@@ -300,9 +302,10 @@ export default class RSS {
       })(entry),
 
       shortBodyPlain: entry.contentSnippet.replace(/<\/?[^>]+>/gi, ""),
-      index: this.entries.includes(entry),
+      index: this.entries.indexOf(entry),
       totalEntries: this.entries.length,
 
+      
       teaserImage: (function(entry) {
         try {
           return entry.content.match(/(<img.*?>)/gi)[0];

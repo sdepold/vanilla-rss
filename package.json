@@ -24,12 +24,14 @@
     ],
     "main": "src/rss.js",
     "scripts": {
-        "test": "npm run minify && npm run test:run",
+        "test": "npm run bundle && npm run test:run",
         "test:run": "mocha test/*.test.js -t 10000",
-        "minify": "node utils/minify",
+        "bundle": "node utils/bundle",
         "lint": "eslint src/**/*.js test/**/*.js",
-        "prepack": "npm run version:sync && npm run compile",
-        "version:sync": "node utils/sync-version"
+        "prepack": "npm run version:sync && npm run bundle",
+        "version:sync": "node utils/sync-version",
+        "serve": "static &",
+        "watch": "npm run serve && watch 'npm run bundle' ./src"
     },
     "engines": {
         "node": ">=v0.4.8"
@@ -42,10 +44,12 @@
         "mocha": "^6.2.0",
         "moment": "^2.14.1",
         "node-fetch": "^2.6.0",
+        "node-static": "^0.7.11",
         "rollup": "^1.22.0",
         "rollup-plugin-terser": "^5.1.2",
         "rollup-plugin-uglify": "^6.0.3",
-        "sinon": "^7.5.0"
+        "sinon": "^7.5.0",
+        "watch": "^1.0.2"
     },
     "license": "MIT"
 }
