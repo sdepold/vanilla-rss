@@ -1,0 +1,11 @@
+script:
+  - "npm test"
+
+notifications:
+  email:
+    - sascha@depold.com
+
+language: node_js
+
+node_js:
+  - 10
