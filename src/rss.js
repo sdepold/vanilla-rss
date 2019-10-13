@@ -1,5 +1,6 @@
 import {HTML_TAGS} from './tags';
 import {slideDown} from './effects'
+import Ballyhoo from 'ballyhoo';
 
 function createElementFromHTML(htmlString) {
   let template = document.createElement("template");
@@ -37,13 +38,14 @@ export default class RSS {
       effect: "show",
       offsetStart: false,
       offsetEnd: false,
-      error: function(e) {
-        console.log("Vanilla RSS: An error ocurred!", e, e.stack);
-      },
-      onData: function() {},
-      success: function() {},
       ...options
     };
+    this.events = new Ballyhoo();
+  }
+
+  on(eventName, callback) {
+    this.events.on(`vanilla-rss/${eventName}`, callback)
+    return this;
   }
 
   render() {
@@ -51,7 +53,7 @@ export default class RSS {
       
       try {
         const feedData = await this._load();
-        
+
         this.feed = feedData.responseData.feed;
         this.entries = feedData.responseData.feed.entries;
       } catch (e) {
@@ -66,9 +68,12 @@ export default class RSS {
       this.target.append(html.layout);
 
       if (html.entries.length !== 0) {
-        if (typeof this.options.onData === "function") {
-          this.options.onData.call(this);
-        }
+        this.events.emit('vanilla-rss/data', {
+          rss: this,
+          feed: this.feed,
+          entries: this.entries
+        });
+
         const container = elementIs(html.layout, "entries")
           ? html.layout
           : html.layout.querySelector("entries");

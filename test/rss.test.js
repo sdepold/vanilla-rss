@@ -533,7 +533,7 @@ describe("rss", () => {
     });
   });
 
-  describe.only('events', ()=>{
+  describe('events', ()=>{
     it('resolves the promise on success', ()=>{
       const rss = new RSS(element, "feedUrl");
 
@@ -548,6 +548,19 @@ describe("rss", () => {
       rss._fetchFeed = () => Promise.reject('oops');
 
       return rss.render().then(expect.fail, (e) => expect(e).to.eql('oops'));
+    });
+
+    it('emits data after load and before rendering', ()=>{
+      const rss = new RSS(element, "feedUrl");
+      const onDataSpy = spy();
+
+      rss._fetchFeed = async () => contentfulFeed;
+
+      return rss.on('data', onDataSpy).render().then(()=>{
+        const callArgs = onDataSpy.getCall(0).args[0];
+
+        expect(onDataSpy.getCall(0).args[0]).to.have.all.keys('rss', 'feed', 'entries');
+      });
     });
   });
 });

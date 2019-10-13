@@ -1,5 +1,6 @@
 const { rollup } = require("rollup");
 const { terser } = require("rollup-plugin-terser");
+const resolve = require('rollup-plugin-node-resolve');
 const { writeFileSync } = require('fs');
 const versions = [
     {
@@ -14,7 +15,7 @@ const versions = [
 (async () => {
     const bundle = await rollup({
         input: __dirname + "/../src/rss.js",
-        plugins: [terser()]
+        plugins: [resolve(), terser()]
     });
 
     versions.forEach((async ({ options, name }) => {
