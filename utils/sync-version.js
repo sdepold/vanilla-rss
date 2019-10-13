@@ -1,6 +1,6 @@
 const fs = require('fs');
 const { version } = require('../package.json');
-const sourcePath = __dirname + '/../src/jquery.rss.js';
+const sourcePath = __dirname + '/../src/rss.js';
 
 const lines = fs.readFileSync(sourcePath).toString().split('\n');
 const updatedLines = lines.map((line) => {
@@ -8,7 +8,7 @@ const updatedLines = lines.map((line) => {
         return line;
     }
 
-    return `    this.version = '${version}'; // Synced version`
+    return `    this.version = "${version}"; // Synced version`
 });
 
 fs.writeFileSync(sourcePath, updatedLines.join('\n'));
