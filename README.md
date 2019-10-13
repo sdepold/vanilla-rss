@@ -1,6 +1,3 @@
-# vanilla-rss
-An easy-to-use vanilla JavaScript library to read and render RSS feeds.
-
 # vanilla-rss [![Build Status](https://travis-ci.org/sdepold/vanilla-rss.svg?branch=master)](https://travis-ci.org/sdepold/vanilla-rss)
 
 An easy-to-use vanilla JavaScript library to read and render RSS feeds.
@@ -18,7 +15,7 @@ Thanks in advance!
 ## Installation
 
 Through npm:
- 
+
 ```
 $ npm install vanilla-rss
 
@@ -34,6 +31,7 @@ rss.render();
 Through cdnjs:
 
 ```
+
 ```
 
 ## Setup
@@ -41,14 +39,15 @@ Through cdnjs:
     <!DOCTYPE html>
     <html>
       <head>
-        <title>jquery.rss example</title>
-        <script src="lib/jquery-1.6.4.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.8.4/moment.min.js"></script>
-        <script src="src/jquery.rss.js"></script>
+        <title>RSS Example</title>
+        <script src="dist/rss.global.min.js"></script>
         <script>
-          jQuery(function($) {
-            $("#rss-feeds").rss("http://feeds.feedburner.com/premiumpixels")
-          })
+          window.onload = function() {
+            new RSS(
+              document.querySelector("#rss-feeds"),
+              "https://partnernetwork.ebay.de/epn-blog?format=rss"
+            ).render();
+          };
         </script>
       </head>
       <body>
@@ -58,103 +57,97 @@ Through cdnjs:
 
 Demo link for above code: http://embed.plnkr.co/WQRoCYLld162uplnz1rc/preview
 
-Note: Moment.js is _optional_. If you include it, jquery.rss will use it to format dates.
+Note: Moment.js is _optional_. If you include it, vanilla-rss will use it to format dates.
 If you do not want to include Moment.js, you may opt for providing your own date formatting function, or for not formatting dates at all.
 
 ## Options
 
-    $("#rss-feeds").rss(
-      "http://feeds.feedburner.com/premiumpixels",
-      {
-        // how many entries do you want?
-        // default: 4
-        // valid values: any integer
-        limit: 10,
+```javascript
+const rss = new RSS(document.querySelector('#rss'), "https://jsfeeds.com/feed", {
+  // how many entries do you want?
+  // default: 4
+  // valid values: any integer
+  limit: 10,
 
-        // want to offset results being displayed?
-        // default: false
-        // valid values: any integer
-        offsetStart: false, // offset start point
-        offsetEnd: false, // offset end point
+  // want to offset results being displayed?
+  // default: false
+  // valid values: any integer
+  offsetStart: false, // offset start point
+  offsetEnd: false, // offset end point
 
-        // will request the API via https
-        // default: false
-        // valid values: false, true
-        ssl: true,
+  // will request the API via https
+  // default: false
+  // valid values: false, true
+  ssl: true,
 
-        // which server should be requested for feed parsing
-        // the server implementation is here: https://github.com/sdepold/feedr
-        // default: feedrapp.info
-        // valid values: any string
-        host: 'my-own-feedr-instance.com',
+  // which server should be requested for feed parsing
+  // the server implementation is here: https://github.com/sdepold/feedr
+  // default: feedrapp.info
+  // valid values: any string
+  host: 'my-own-feedr-instance.com',
 
-        // option to seldomly render ads
-        // ads help covering the costs for the feedrapp server hosting and future improvements
-        // default: true
-        // valid values: false, true
-        support: false,
+  // option to seldomly render ads
+  // ads help covering the costs for the feedrapp server hosting and future improvements
+  // default: true
+  // valid values: false, true
+  support: false,
 
-        // outer template for the html transformation
-        // default: "<ul>{entries}</ul>"
-        // valid values: any string
-        layoutTemplate: "<div class='feed-container'>{entries}</div>",
+  // outer template for the html transformation
+  // default: "<ul>{entries}</ul>"
+  // valid values: any string
+  layoutTemplate: "<div class='feed-container'>{entries}</div>",
 
-        // inner template for each entry
-        // default: '<li><a href="{url}">[{author}@{date}] {title}</a><br/>{shortBodyPlain}</li>'
-        // valid values: any string
-        entryTemplate: '<p>{title}</p>',
+  // inner template for each entry
+  // default: '<li><a href="{url}">[{author}@{date}] {title}</a><br/>{shortBodyPlain}</li>'
+  // valid values: any string
+  entryTemplate: '<p>{title}</p>',
 
-        // additional token definition for in-template-usage
-        // default: {}
-        // valid values: any object/hash
-        tokens: {
-          foo: 'bar',
-          bar: function(entry, tokens) { return entry.title }
-        },
+  // additional token definition for in-template-usage
+  // default: {}
+  // valid values: any object/hash
+  tokens: {
+    foo: 'bar',
+    bar: function(entry, tokens) { return entry.title }
+  },
 
-        // formats the date with moment.js (optional)
-        // default: 'dddd MMM Do'
-        // valid values: see http://momentjs.com/docs/#/displaying/
-        dateFormat: 'MMMM Do, YYYY',
+  // formats the date with moment.js (optional)
+  // default: 'dddd MMM Do'
+  // valid values: see http://momentjs.com/docs/#/displaying/
+  dateFormat: 'MMMM Do, YYYY',
 
-        // localizes the date with moment.js (optional)
-        // default: 'en'
-        dateLocale: 'de',
+  // localizes the date with moment.js (optional)
+  // default: 'en'
+  dateLocale: 'de',
 
-        // formats the date in whatever manner you choose. (optional)
-        // this function should return your formatted date.
-        // this is useful if you want to format dates without moment.js.
-        // if you don't use moment.js and don't define a dateFormatFunction, the dates will
-        // not be formatted; they will appear exactly as the RSS feed gives them to you.
-        dateFormatFunction: function(date){},
+  // formats the date in whatever manner you choose. (optional)
+  // this function should return your formatted date.
+  // this is useful if you want to format dates without moment.js.
+  // if you don't use moment.js and don't define a dateFormatFunction, the dates will
+  // not be formatted; they will appear exactly as the RSS feed gives them to you.
+  dateFormatFunction: function(date){},
 
-        // the effect, which is used to let the entries appear
-        // default: 'show'
-        // valid values: 'show', 'slide', 'slideFast', 'slideSynced', 'slideFastSynced'
-        effect: 'slideFastSynced',
+  // a callback, which gets triggered once data was received but before the rendering.
+  // this can be useful when you need to remove a spinner or something similar
+  onData: function(){}
+});
 
-        // a callback, which gets triggered when an error occurs
-        // default: function() { throw new Error("jQuery RSS: url don't link to RSS-Feed") }
-        error: function(){},
+rss
+  // Parse the RSS feed and render it accordingly to the configured layout and entry template.
+  // The render call returns a promise.
+  .render()
 
-        // a callback, which gets triggered when everything was loaded successfully
-        // this is an alternative to the next parameter (callback function)
-        // default: function(){}
-        success: function(){},
+  .then(
+    // A callback, which gets triggered when every entry was loaded and rendered successfully
+    ()=>{},
 
-        // a callback, which gets triggered once data was received but before the rendering.
-        // this can be useful when you need to remove a spinner or something similar
-        onData: function(){}
-      },
-
-      // callback function
-      // called after feeds are successfully loaded and after animations are done
-      function callback() {}
-    )
+    // A callback, which gets triggered when an error occurs
+    (e)=>{}
+  );
+```
 
 ### Note about the host option
 
-Since version 3.0.0 the plugin is no longer using the Google Feed API but a drop-in replacement called [feedr](https://feedrapp.info). That server is currently running on Heroku and might have some downtimes, interruptions or unexpected issues. While I will try to keep those problems as rare as possible, it can totally happen from time to time. I might move the service to some other provide or even improve the infrastructure.
+This library is using a Google Feed API drop-in replacement called [feedr](https://feedrapp.info). The server is hosted on a central public server and each time this plugin loads, the server is parsing the XML feed and returning the respective JSON representation. 
 
 If you don't want to rely on the [provided server](http://feedrapp.info) and instead run your own version, you can just download feedr, install the dependencies and run it. As written above, you can specify the host which is used to parse the feeds with the `host` option.
 
@@ -193,56 +186,56 @@ There are some predefined tokens:
 - totalEntries: the total count of the entries
 - feed: contains high level information of the feed (e.g. title of the website)
 
-You can also define custom tokens using the ```tokens``` option:
+You can also define custom tokens using the `tokens` option:
 
-    $('#foo').rss(url, {
-      entryTemplate: "{dynamic}, {static}, {re-use}",
-      tokens: {
-        dynamic: function(entry, tokens){ return "dynamic-stuff: " + entry.title },
-        "re-use": function(entry, tokens){ return encodeURIComponent(tokens.teaserImageUrl) },
-        static: "static"
-      }
-    })
+```javascript
+new RSS(document.querySelector('#rss'), url, {
+  entryTemplate: "{dynamic}, {static}, {re-use}",
+  tokens: {
+    dynamic: function(entry, tokens){ return "dynamic-stuff: " + entry.title },
+    "re-use": function(entry, tokens){ return encodeURIComponent(tokens.teaserImageUrl) },
+    static: "static"
+  }
+}).render();
+```
 
 Please make sure to NOT define infinite loops. The following example is really BAD:
 
-    $('#foo').rss(url, {
-      entryTemplate: "{loop}",
-      tokens: {
-        whoops: function(entry, tokens) { return tokens.loop() }
-        loop: function(entry, tokens) { return tokens.whoops() }
-      }
-    })
+```javascript
+new RSS(document.querySelector('#rss'), url, {
+  entryTemplate: "{loop}",
+  tokens: {
+    whoops: function(entry, tokens) { return tokens.loop() }
+    loop: function(entry, tokens) { return tokens.whoops() }
+  }
+}).render();
+```
 
 Here is a real-world example:
 
-    $('#foo').rss(url, {
-      layoutTemplate: "<table><tr><th>Title</th></tr>{entries}</table>",
-      entryTemplate:  "<tr><td>{title}</td></tr>"
-    })
+```javascript
+new RSS(document.querySelector('#rss'), url, {
+  layoutTemplate: "<table><tr><th>Title</th></tr>{entries}</table>",
+  entryTemplate:  "<tr><td>{title}</td></tr>"
+}).render();
+```
 
 ## Filtering
 
 The plugin also allows you to filter specific entries in order to only print them:
 
-    $("#foo").rss(url, {
-      limit: 100,
-      filterLimit: 10,
-      filter: function(entry, tokens) {
-        return tokens.title.indexOf('my filter') > -1
-      }
-    })
+```javascript
+new RSS(document.querySelector('#rss'), url, {
+  limit: 100,
+  filterLimit: 10,
+  filter: function(entry, tokens) {
+    return tokens.title.indexOf('my filter') > -1
+  }
+}).render();
+```
 
 This will request 100 entries via the Feed API and renders the first 10 matching entries.
 
-## Testing
-
-The test suite is using BusterJS. In order to successfully run the tests you will need [phantomjs](http://phantomjs.org/).
-If that is installed you only have to run `npm test`.
-
 ## Authors/Contributors
 
-- DaWanda GmbH ([Website](http://dawanda.com))
-- Sascha Depold ([Twitter](http://twitter.com/sdepold) | [Github](http://github.com/sdepold) | [Website](http://depold.com))
-- Steffen Schröder  ([Twitter](http://twitter.com/ChaosSteffen) | [Github](http://github.com/ChaosSteffen) | [Website](http://schroeder-blog.de))
-
+- Sascha Depold ([Twitter](http://twitter.com/sdepold) | [Github](http://github.com/sdepold) | [Website](https://depold.com))

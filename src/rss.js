@@ -48,9 +48,10 @@ export default class RSS {
 
   render() {
     return new Promise(async (resolve, reject) => {
-      const feedData = await this._load();
-
+      
       try {
+        const feedData = await this._load();
+        
         this.feed = feedData.responseData.feed;
         this.entries = feedData.responseData.feed.entries;
       } catch (e) {
@@ -316,7 +317,7 @@ export default class RSS {
 
       teaserImageUrl: (function(entry) {
         try {
-          return entry.content.match(/(<img.*?>)/gi)[0].match(/src="(.*?)"/)[1];
+          return entry.content.match(/(<img.*?>)/gi)[0].match(/src=["'](.*?)["']/)[1];
         } catch (e) {
           return "";
         }

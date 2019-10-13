@@ -9,6 +9,7 @@ const moment = (global.moment = require("moment"));
 const { stub, spy } = require("sinon");
 const { version } = require("../package.json");
 const RSS = require("../dist/rss.node.min");
+const contentfulFeed = require("./fixtures/contentful.rss.json");
 
 describe("rss", () => {
   let $, element, originalGetJson, window;
@@ -266,6 +267,44 @@ describe("rss", () => {
   });
 
   describe("tokens", () => {
+    Object.entries({
+      url:
+        "https://www.contentful.com/blog/2019/09/25/you-should-go-to-ada-lovelace/",
+      author: "",
+      title:
+        "Why I’m going to the Ada Lovelace Festival (and you should, too!) ",
+      body:
+        "<img src=\"https://images.ctfassets.net/fo9twyrwpveg/WrsWiDkTMO4eia42EICYQ/920ae01f436c8f908eec8ae2c68a4827/IC-1_Launch_digital_products_faster.svg\">Ada Lovelace was a badass. She wrote one of the first computer programs when almost no women worked in tech — in 1842, to be precise. On Oct. 24–25, the Ada Lovelace Festival will celebrate her contributions and those of women leading tech today with talks, workshops and social activities.This year’s event focuses on the topic of ownership. Speakers from leading enterprises — such as Volkswagen, Accenture and SAP — will engage with artists, activists and government officials to discuss who gets to own the future of the digital world, and how more people can be involved.I’m thrilled to attend this year. Here are a few reasons why.",
+      shortBody:
+        "Ada Lovelace was a badass. She wrote one of the first computer programs when almost no women worked in tech — in 1842, t",
+      bodyPlain:
+        "Ada Lovelace was a badass. She wrote one of the first computer programs when almost no women worked in tech — in 1842, to be precise. On Oct. 24–25, the Ada Lovelace Festival will celebrate her contributions and those of women leading tech today with talks, workshops and social activities.This year’s event focuses on the topic of ownership. Speakers from leading enterprises — such as Volkswagen, Accenture and SAP — will engage with artists, activists and government officials to discuss who gets to own the future of the digital world, and how more people can be involved.I’m thrilled to attend this year. Here are a few reasons why.",
+      shortBodyPlain:
+        "Ada Lovelace was a badass. She wrote one of the first computer programs when almost no women worked in tech — in 1842, t",
+      index: 0,
+      totalEntries: 1,
+      teaserImage: "<img src=\"https://images.ctfassets.net/fo9twyrwpveg/WrsWiDkTMO4eia42EICYQ/920ae01f436c8f908eec8ae2c68a4827/IC-1_Launch_digital_products_faster.svg\">",
+      teaserImageUrl: "https://images.ctfassets.net/fo9twyrwpveg/WrsWiDkTMO4eia42EICYQ/920ae01f436c8f908eec8ae2c68a4827/IC-1_Launch_digital_products_faster.svg"
+    }).forEach(([token, expectedValue]) => {
+      describe(token, () => {
+        it("returns the expected value for the token", () => {
+          const rss = new RSS(element, "feedUrl", {
+            entryTemplate: `<li>{${token}}</li>`,
+            limit: 1
+          });
+
+          rss._fetchFeed = async () => contentfulFeed;
+
+          return rss.render().then(() => {
+            var renderedContent = element.innerHTML.replace(/\n/g, "");
+            expect(renderedContent).to.eql(
+              `<ul><li>${expectedValue}</li></ul>`
+            );
+          });
+        });
+      });
+    });
+
     describe("feed", () => {
       it("returns all feed tokens but entries", () => {
         return new RSS(element, feedUrl, {
@@ -285,6 +324,30 @@ describe("rss", () => {
 
             expect(renderedContent).to.equal(
               "<ul><li>Contentful - Blog</li></ul>"
+            );
+          });
+      });
+    });
+
+    describe("date", () => {
+      it("renders english dates by default", () => {
+        return new RSS(element, feedUrl, {}).render().then(() => {
+          var renderedContent = element.innerHTML.replace(/\n/g, "");
+
+          expect(renderedContent).to.match(
+            /<a href=".*">\[.*(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday) .*\].*<\/a>/
+          );
+        });
+      });
+
+      it("renders german dates if enabled", () => {
+        return new RSS(element, feedUrl, { dateLocale: "de" })
+          .render()
+          .then(() => {
+            var renderedContent = element.innerHTML.replace(/\n/g, "");
+
+            expect(renderedContent).to.match(
+              /<a href=".*">\[.*(Montag|Dienstag|Mittwoch|Donnerstag|Freitag|Samstag|Sonntag).*\].*<\/a>/
             );
           });
       });
@@ -468,31 +531,23 @@ describe("rss", () => {
         });
       });
     });
+  });
 
-    describe("date", () => {
-      it("renders english dates by default", () =>{
-          return new RSS(element, feedUrl, {})
-          .render()
-          .then(() => {
-            var renderedContent = element.innerHTML.replace(/\n/g, "");
+  describe.only('events', ()=>{
+    it('resolves the promise on success', ()=>{
+      const rss = new RSS(element, "feedUrl");
 
-            expect(renderedContent).to.match(
-              /<a href=".*">\[.*(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday) .*\].*<\/a>/
-            );
-          });
-      });
+      rss._fetchFeed = async () => contentfulFeed;
 
-      it("renders german dates if enabled", () =>{
-        return new RSS(element, feedUrl, { dateLocale: "de" })
-          .render()
-          .then(() => {
-            var renderedContent = element.innerHTML.replace(/\n/g, "");
+      return rss.render().then(()=>{}, expect.fail);
+    });
 
-            expect(renderedContent).to.match(
-              /<a href=".*">\[.*(Montag|Dienstag|Mittwoch|Donnerstag|Freitag|Samstag|Sonntag).*\].*<\/a>/
-            );
-          });
-      });
+    it('rejects the promise on error', ()=>{
+      const rss = new RSS(element, "feedUrl");
+
+      rss._fetchFeed = () => Promise.reject('oops');
+
+      return rss.render().then(expect.fail, (e) => expect(e).to.eql('oops'));
     });
   });
 });
