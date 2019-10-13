@@ -132,6 +132,12 @@ const rss = new RSS(document.querySelector('#rss'), "https://jsfeeds.com/feed", 
 });
 
 rss
+  .on('data', (data) => {
+    console.log(data.rss); // Returns the rss instance
+    console.log(data.feed); // Returns the feed meta information
+    console.log(data.entries); // Returns the feed entries
+  })
+
   // Parse the RSS feed and render it accordingly to the configured layout and entry template.
   // The render call returns a promise.
   .render()
