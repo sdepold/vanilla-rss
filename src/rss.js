@@ -1,5 +1,4 @@
 import {HTML_TAGS} from './tags';
-import {slideDown} from './effects'
 import Ballyhoo from 'ballyhoo';
 
 function createElementFromHTML(htmlString) {
@@ -21,7 +20,6 @@ export default class RSS {
     this.target = target;
     this.url = url;
     this.html = [];
-    this.effectQueue = [];
     this.options = {
       ssl: true,
       host: "www.feedrapp.info",
@@ -35,9 +33,9 @@ export default class RSS {
       outputMode: "json",
       dateFormat: "dddd MMM Do",
       dateLocale: "en",
-      effect: "show",
       offsetStart: false,
       offsetEnd: false,
+      fetchFeed: null,
       ...options
     };
     this.events = new Ballyhoo();
@@ -78,28 +76,18 @@ export default class RSS {
           ? html.layout
           : html.layout.querySelector("entries");
 
-        this._appendEntriesAndApplyEffects(container, html.entries);
+          this._appendEntries(container, html.entries);
       }
 
-      if (this.effectQueue.length > 0) {
-        this._executeEffectQueue(this.callback);
-      } else {
-        resolve();
-      }
+      resolve();
     });
   }
 
-  _appendEntriesAndApplyEffects(target, entries) {
-    entries.forEach(entry => {
+  _appendEntries(target, entries) {
+    entries.forEach((entry, index) => {
       var $html = this._wrapContent(entry);
 
-      if (this.options.effect === "show") {
-        target.insertAdjacentHTML("beforebegin", $html.outerHTML);
-      } else {
-        $html.style.display = "none";
-        target.insertAdjacentHTML("beforebegin", $html.outerHTML);
-        this._applyEffect($html, this.options.effect);
-      }
+      target.insertAdjacentHTML("beforebegin", $html.outerHTML);
     });
 
     target.remove();
@@ -140,6 +128,10 @@ export default class RSS {
   }
 
   async _fetchFeed(apiUrl) {
+    if (this.options.fetchFeed) {
+      return await this.options.fetchFeed(apiUrl);
+    }
+
     const data = await fetch(apiUrl, {
       headers: {
         "Content-Type": "application/json"
@@ -210,40 +202,6 @@ export default class RSS {
     } else {
       return true;
     }
-  }
-
-  _applyEffect($element, effect, callback) {
-    switch (effect) {
-      case "slide":
-        // slow
-        // slideDown($element, callback)
-        break;
-      case "slideFast":
-        // slideDown($element, callback)
-        break;
-      case "slideSynced":
-        // this.effectQueue.push({ element: $element, effect: 'slide' });
-        break;
-      case "slideFastSynced":
-        // this.effectQueue.push({ element: $element, effect: 'slideFast' });
-        break;
-    }
-  }
-
-  _executeEffectQueue(callback) {
-    this.effectQueue.reverse();
-
-    var executeEffectQueueItem = () => {
-      var item = this.effectQueue.pop();
-
-      if (item) {
-        this._applyEffect(item.element, item.effect, executeEffectQueueItem);
-      } else if (callback) {
-        callback();
-      }
-    };
-
-    executeEffectQueueItem();
   }
 
   _evaluateStringForEntry(string, entry) {

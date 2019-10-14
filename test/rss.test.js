@@ -563,4 +563,29 @@ describe("rss", () => {
       });
     });
   });
+
+  describe('fetchFeed', ()=>{
+    it('should optionally use the fetchFeed parameter', ()=>{
+      return new RSS(element, 'feedUrl', {
+        fetchFeed: (apiUrl) => {
+          expect(apiUrl).to.equal('https://www.feedrapp.info?support=true&version=1.0.0&q=feedUrl');
+          return {
+            responseData: {
+              feed: {
+                entries: []
+              }
+            }
+          };
+        }
+      }).render().then(()=>{
+        var renderedContent = element.innerHTML
+        .split("\n")
+        .map(s => s.trim())
+        .join("")
+        .trim();
+
+        expect(renderedContent).to.equal('<ul><entries></entries></ul>');
+      })
+    })
+  })
 });

@@ -126,12 +126,16 @@ const rss = new RSS(document.querySelector('#rss'), "https://jsfeeds.com/feed", 
   // not be formatted; they will appear exactly as the RSS feed gives them to you.
   dateFormatFunction: function(date){},
 
-  // a callback, which gets triggered once data was received but before the rendering.
-  // this can be useful when you need to remove a spinner or something similar
-  onData: function(){}
+  fetchFeed: (apiUrl) => {
+    return new Promise((resolve) => {
+      $.getJSON(apiUrl, resolve);
+    });
+  }
 });
 
 rss
+
+  // An observer which gets triggered once data was received but before the rendering.
   .on('data', (data) => {
     console.log(data.rss); // Returns the rss instance
     console.log(data.feed); // Returns the feed meta information
