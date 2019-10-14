@@ -24,7 +24,7 @@
     ],
     "main": "src/rss.js",
     "scripts": {
-        "test": "npm run bundle && npm run test:run",
+        "test": "npm run prepack && npm run test:run",
         "test:run": "mocha test/*.test.js -t 10000",
         "bundle": "node utils/bundle",
         "lint": "eslint src/**/*.js test/**/*.js",

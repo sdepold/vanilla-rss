@@ -568,7 +568,7 @@ describe("rss", () => {
     it('should optionally use the fetchFeed parameter', ()=>{
       return new RSS(element, 'feedUrl', {
         fetchFeed: (apiUrl) => {
-          expect(apiUrl).to.equal('https://www.feedrapp.info?support=true&version=1.0.0&q=feedUrl');
+          expect(apiUrl).to.equal(`https://www.feedrapp.info?support=true&version=${version}&q=feedUrl`);
           return {
             responseData: {
               feed: {
