@@ -16,7 +16,7 @@ function elementIs(node, tagName) {
 
 export default class RSS {
   constructor(target, url, options = {}) {
-    this.version = "1.1.0"; // Synced version
+    this.version = "1.1.1"; // Synced version
     this.target = target;
     this.url = url;
     this.html = [];
