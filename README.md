@@ -16,10 +16,12 @@ Thanks in advance!
 
 Through npm:
 
-```
+```bash
 $ npm install vanilla-rss
+```
 
-const RSS = require('vanilla-rss);
+```javascript
+const RSS = require('vanilla-rss');
 const rss = new RSS(
     document.querySelector("#rss-feeds"),
     "https://partnernetwork.ebay.de/epn-blog?format=rss",
