@@ -2,7 +2,7 @@
     "author": "Sascha Depold <sascha@depold.com> (http://depold.com)",
     "name": "vanilla-rss",
     "description": "An easy-to-use vanilla JavaScript library to read and render RSS feeds.",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "homepage": "https://github.com/sdepold/vanilla-rss",
     "keywords": [
         "rss",
