@@ -16,9 +16,11 @@ Thanks in advance!
 
 Through npm:
 
-```
+```bash
 $ npm install vanilla-rss
+```
 
+```javascript
 const RSS = require('vanilla-rss');
 const rss = new RSS(
     document.querySelector("#rss-feeds"),
@@ -36,24 +38,26 @@ Through cdnjs:
 
 ## Setup
 
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <title>RSS Example</title>
-        <script src="dist/rss.global.min.js"></script>
-        <script>
-          window.onload = function() {
-            new RSS(
-              document.querySelector("#rss-feeds"),
-              "https://partnernetwork.ebay.de/epn-blog?format=rss"
-            ).render();
-          };
-        </script>
-      </head>
-      <body>
-        <div id="rss-feeds"></div>
-      </body>
-    </html>
+```hmtl
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>RSS Example</title>
+    <script src="dist/rss.global.min.js"></script>
+    <script>
+      window.onload = function() {
+        new RSS(
+          document.querySelector("#rss-feeds"),
+          "https://partnernetwork.ebay.de/epn-blog?format=rss"
+        ).render();
+      };
+    </script>
+  </head>
+  <body>
+    <div id="rss-feeds"></div>
+  </body>
+</html>
+```
 
 Demo link for above code: http://embed.plnkr.co/WQRoCYLld162uplnz1rc/preview
 
