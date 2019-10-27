@@ -1,4 +1,13 @@
-# vanilla-rss [![Build Status](https://travis-ci.org/sdepold/vanilla-rss.svg?branch=master)](https://travis-ci.org/sdepold/vanilla-rss)
+<h1>
+  vanilla-rss
+
+  <span style="float: right">
+    <a href="https://travis-ci.org/sdepold/vanilla-rss"><img src="https://travis-ci.org/sdepold/vanilla-rss.svg?branch=master" alt="Build Status"></a>
+    <a href="https://badge.fury.io/js/vanilla-rss"><img src="https://badge.fury.io/js/vanilla-rss.svg" alt="npm version"></a>
+    <a href="https://codecov.io/gh/sdepold/vanilla-rss"><img src="https://codecov.io/gh/sdepold/vanilla-rss/branch/master/graph/badge.svg" /></a>
+    <img alt="npm" src="https://img.shields.io/npm/dw/vanilla-rss">
+  </span>
+</h1>
 
 An easy-to-use vanilla JavaScript library to read and render RSS feeds.
 
