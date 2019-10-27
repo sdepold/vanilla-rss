@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>RSS accordion example</title>
+    <title>RSS zotero example</title>
 
     <!-- Required meta tags -->
     <meta charset="utf-8" />
@@ -31,7 +31,7 @@
       }
 
       .card-header {
-        padding: .5em;
+        padding: 0.5em;
       }
 
       .btn {
@@ -53,32 +53,17 @@
       window.onload = function() {
         const rss = new RSS(
           document.querySelector("#rss-feeds"),
-          "https://partnernetwork.ebay.de/epn-blog?format=rss",
+          "https://api.zotero.org/groups/308781/items?format=atom",
           {
-            limit: 15,
+            entryTemplate:
+              "<ul><li>Title: {title}</li><li>Author: {author}</li><li>Year: {year}</li></ul><br>",
             tokens: {
-              showClass: (entry, tokens) => (tokens.index === 0 ? "show" : "")
-            },
-            layoutTemplate:
-              '<div class="accordion" id="accordionExample">{entries}</div>',
-            entryTemplate: `<div class="card">
-              <div class="card-header" id="heading-{index}">
-                <h2 class="mb-0">
-                  <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse-{index}" aria-expanded="true" aria-controls="collapse-{index}">
-                    {title}
-                  </button>
-                </h2>
-              </div>
-  
-              <div id="collapse-{index}" class="collapse {showClass}" aria-labelledby="heading-{index}" data-parent="#accordionExample">
-                <div class="card-body">
-                  {bodyPlain}
-                </div>
-              </div>
-            </div>`
+              year: function(entry, tokens) {
+                return new Date(entry.publishedDate).getFullYear();
+              }
+            }
           }
         );
-
         rss.render().then(() => console.log("cool"));
       };
     </script>
