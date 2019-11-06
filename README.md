@@ -139,6 +139,11 @@ const rss = new RSS(document.querySelector('#rss'), "https://jsfeeds.com/feed", 
   // not be formatted; they will appear exactly as the RSS feed gives them to you.
   dateFormatFunction: function(date){},
 
+  // Defines the format which is used for the feed.
+  // Default: null (utf8)
+  // valid values: https://github.com/ashtuchkin/iconv-lite/wiki/Supported-Encodings
+  encoding: 'ISO-8859-1 ',
+
   fetchFeed: (apiUrl) => {
     return new Promise((resolve) => {
       $.getJSON(apiUrl, resolve);

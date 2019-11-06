@@ -226,6 +226,28 @@ describe("rss", () => {
     });
   });
 
+  describe("encoding", () => {
+    it("omits the encoding by default", () => {
+      const rss = new RSS(element, feedUrl);
+      const fetchFeedSpy = spy(rss, "_fetchFeed");
+
+      return rss.render().then(() => {
+        expect(fetchFeedSpy.getCall(0).args[0]).to.not.contain("encoding");
+        fetchFeedSpy.restore();
+      });
+    });
+
+    it("adds the encoding when configured", () => {
+      const rss = new RSS(element, feedUrl, { encoding: "ISO-8859-1 " });
+      const fetchFeedSpy = spy(rss, "_fetchFeed");
+
+      return rss.render().then(() => {
+        expect(fetchFeedSpy.getCall(0).args[0]).to.match(/encoding=ISO-8859-1/);
+        fetchFeedSpy.restore();
+      });
+    });
+  });
+
   describe("ssl", () => {
     it("rewrites the host to feedrapp.info if not specified differently", () => {
       const rss = new RSS(element, feedUrl);

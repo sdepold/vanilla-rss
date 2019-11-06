@@ -36,6 +36,7 @@ export default class RSS {
       offsetStart: false,
       offsetEnd: false,
       fetchFeed: null,
+      encoding: null,
       ...options
     };
     this.events = new Ballyhoo();
@@ -122,6 +123,10 @@ export default class RSS {
 
     if (this.options.key !== null) {
       apiUrl += `&key=${this.options.key}`;
+    }
+
+    if (this.options.encoding !== null) {
+      apiUrl += `&encoding=${this.options.encoding}`;
     }
 
     return this._fetchFeed(apiUrl);
