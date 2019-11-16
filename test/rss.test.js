@@ -65,7 +65,7 @@ describe("rss", () => {
 
     return rss.render().then(() => {
       expect(fetchFeedSpy.getCall(0).args[0]).to.equal(
-        "https://www.feedrapp.info?support=true&version=1.2.0&q=https%3A%2F%2Fwww.contentful.com%2Fblog%2Ffeed.xml,http%3A%2F%2Fmamaskind.de%2Ffeed%2Fatom%2F"
+        `https://www.feedrapp.info?support=true&version=${version}&q=https%3A%2F%2Fwww.contentful.com%2Fblog%2Ffeed.xml,http%3A%2F%2Fmamaskind.de%2Ffeed%2Fatom%2F`
       );
       fetchFeedSpy.restore();
     });
