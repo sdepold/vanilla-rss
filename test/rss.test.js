@@ -59,6 +59,18 @@ describe("rss", () => {
     });
   });
 
+  it("supports a list of feed URLs", () => {
+    const rss = new RSS(element, [feedUrl, "http://mamaskind.de/feed/atom/"]);
+    const fetchFeedSpy = spy(rss, "_fetchFeed");
+
+    return rss.render().then(() => {
+      expect(fetchFeedSpy.getCall(0).args[0]).to.equal(
+        "https://www.feedrapp.info?support=true&version=1.2.0&q=https%3A%2F%2Fwww.contentful.com%2Fblog%2Ffeed.xml,http%3A%2F%2Fmamaskind.de%2Ffeed%2Fatom%2F"
+      );
+      fetchFeedSpy.restore();
+    });
+  });
+
   it("renders 2 list entries if limit is set to 2", () => {
     return new RSS(element, feedUrl, {
       limit: 2
@@ -296,7 +308,7 @@ describe("rss", () => {
       title:
         "Why I’m going to the Ada Lovelace Festival (and you should, too!) ",
       body:
-        "<img src=\"https://images.ctfassets.net/fo9twyrwpveg/WrsWiDkTMO4eia42EICYQ/920ae01f436c8f908eec8ae2c68a4827/IC-1_Launch_digital_products_faster.svg\">Ada Lovelace was a badass. She wrote one of the first computer programs when almost no women worked in tech — in 1842, to be precise. On Oct. 24–25, the Ada Lovelace Festival will celebrate her contributions and those of women leading tech today with talks, workshops and social activities.This year’s event focuses on the topic of ownership. Speakers from leading enterprises — such as Volkswagen, Accenture and SAP — will engage with artists, activists and government officials to discuss who gets to own the future of the digital world, and how more people can be involved.I’m thrilled to attend this year. Here are a few reasons why.",
+        '<img src="https://images.ctfassets.net/fo9twyrwpveg/WrsWiDkTMO4eia42EICYQ/920ae01f436c8f908eec8ae2c68a4827/IC-1_Launch_digital_products_faster.svg">Ada Lovelace was a badass. She wrote one of the first computer programs when almost no women worked in tech — in 1842, to be precise. On Oct. 24–25, the Ada Lovelace Festival will celebrate her contributions and those of women leading tech today with talks, workshops and social activities.This year’s event focuses on the topic of ownership. Speakers from leading enterprises — such as Volkswagen, Accenture and SAP — will engage with artists, activists and government officials to discuss who gets to own the future of the digital world, and how more people can be involved.I’m thrilled to attend this year. Here are a few reasons why.',
       shortBody:
         "Ada Lovelace was a badass. She wrote one of the first computer programs when almost no women worked in tech — in 1842, t",
       bodyPlain:
@@ -305,8 +317,10 @@ describe("rss", () => {
         "Ada Lovelace was a badass. She wrote one of the first computer programs when almost no women worked in tech — in 1842, t",
       index: 0,
       totalEntries: 1,
-      teaserImage: "<img src=\"https://images.ctfassets.net/fo9twyrwpveg/WrsWiDkTMO4eia42EICYQ/920ae01f436c8f908eec8ae2c68a4827/IC-1_Launch_digital_products_faster.svg\">",
-      teaserImageUrl: "https://images.ctfassets.net/fo9twyrwpveg/WrsWiDkTMO4eia42EICYQ/920ae01f436c8f908eec8ae2c68a4827/IC-1_Launch_digital_products_faster.svg"
+      teaserImage:
+        '<img src="https://images.ctfassets.net/fo9twyrwpveg/WrsWiDkTMO4eia42EICYQ/920ae01f436c8f908eec8ae2c68a4827/IC-1_Launch_digital_products_faster.svg">',
+      teaserImageUrl:
+        "https://images.ctfassets.net/fo9twyrwpveg/WrsWiDkTMO4eia42EICYQ/920ae01f436c8f908eec8ae2c68a4827/IC-1_Launch_digital_products_faster.svg"
     }).forEach(([token, expectedValue]) => {
       describe(token, () => {
         it("returns the expected value for the token", () => {
@@ -555,42 +569,51 @@ describe("rss", () => {
     });
   });
 
-  describe('events', ()=>{
-    it('resolves the promise on success', ()=>{
+  describe("events", () => {
+    it("resolves the promise on success", () => {
       const rss = new RSS(element, "feedUrl");
 
       rss._fetchFeed = async () => contentfulFeed;
 
-      return rss.render().then(()=>{}, expect.fail);
+      return rss.render().then(() => {}, expect.fail);
     });
 
-    it('rejects the promise on error', ()=>{
+    it("rejects the promise on error", () => {
       const rss = new RSS(element, "feedUrl");
 
-      rss._fetchFeed = () => Promise.reject('oops');
+      rss._fetchFeed = () => Promise.reject("oops");
 
-      return rss.render().then(expect.fail, (e) => expect(e).to.eql('oops'));
+      return rss.render().then(expect.fail, e => expect(e).to.eql("oops"));
     });
 
-    it('emits data after load and before rendering', ()=>{
+    it("emits data after load and before rendering", () => {
       const rss = new RSS(element, "feedUrl");
       const onDataSpy = spy();
 
       rss._fetchFeed = async () => contentfulFeed;
 
-      return rss.on('data', onDataSpy).render().then(()=>{
-        const callArgs = onDataSpy.getCall(0).args[0];
+      return rss
+        .on("data", onDataSpy)
+        .render()
+        .then(() => {
+          const callArgs = onDataSpy.getCall(0).args[0];
 
-        expect(onDataSpy.getCall(0).args[0]).to.have.all.keys('rss', 'feed', 'entries');
-      });
+          expect(onDataSpy.getCall(0).args[0]).to.have.all.keys(
+            "rss",
+            "feed",
+            "entries"
+          );
+        });
     });
   });
 
-  describe('fetchFeed', ()=>{
-    it('should optionally use the fetchFeed parameter', ()=>{
-      return new RSS(element, 'feedUrl', {
-        fetchFeed: (apiUrl) => {
-          expect(apiUrl).to.equal(`https://www.feedrapp.info?support=true&version=${version}&q=feedUrl`);
+  describe("fetchFeed", () => {
+    it("should optionally use the fetchFeed parameter", () => {
+      return new RSS(element, "feedUrl", {
+        fetchFeed: apiUrl => {
+          expect(apiUrl).to.equal(
+            `https://www.feedrapp.info?support=true&version=${version}&q=feedUrl`
+          );
           return {
             responseData: {
               feed: {
@@ -599,15 +622,17 @@ describe("rss", () => {
             }
           };
         }
-      }).render().then(()=>{
-        var renderedContent = element.innerHTML
-        .split("\n")
-        .map(s => s.trim())
-        .join("")
-        .trim();
-
-        expect(renderedContent).to.equal('<ul><entries></entries></ul>');
       })
-    })
-  })
+        .render()
+        .then(() => {
+          var renderedContent = element.innerHTML
+            .split("\n")
+            .map(s => s.trim())
+            .join("")
+            .trim();
+
+          expect(renderedContent).to.equal("<ul><entries></entries></ul>");
+        });
+    });
+  });
 });

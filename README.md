@@ -264,6 +264,16 @@ new RSS(document.querySelector('#rss'), url, {
 
 This will request 100 entries via the Feed API and renders the first 10 matching entries.
 
+## Multiple feed URLs
+
+It is also possible to provide several feed URLs separated by commas. 
+Please note, that this feature is <strong>experimental</strong> and might change in the future!
+
+```javascript
+new RSS(document.querySelector('#rss'), ['url1', 'url2', 'urlN']).render();
+```
+The Feedr server will now query all of the provided feeds and append all entries to the first feed.
+
 ## Authors/Contributors
 
 - Sascha Depold ([Twitter](http://twitter.com/sdepold) | [Github](http://github.com/sdepold) | [Website](https://depold.com))

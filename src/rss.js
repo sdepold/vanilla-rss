@@ -1,5 +1,5 @@
-import {HTML_TAGS} from './tags';
-import Ballyhoo from 'ballyhoo';
+import { HTML_TAGS } from "./tags";
+import Ballyhoo from "ballyhoo";
 
 function createElementFromHTML(htmlString) {
   let template = document.createElement("template");
@@ -15,10 +15,10 @@ function elementIs(node, tagName) {
 }
 
 export default class RSS {
-  constructor(target, url, options = {}) {
-    this.version = "1.1.1"; // Synced version
+  constructor(target, urls, options = {}) {
+    this.version = "1.2.0"; // Synced version
     this.target = target;
-    this.url = url;
+    this.urls = [].concat(urls);
     this.html = [];
     this.options = {
       ssl: true,
@@ -43,13 +43,12 @@ export default class RSS {
   }
 
   on(eventName, callback) {
-    this.events.on(`vanilla-rss/${eventName}`, callback)
+    this.events.on(`vanilla-rss/${eventName}`, callback);
     return this;
   }
 
   render() {
     return new Promise(async (resolve, reject) => {
-      
       try {
         const feedData = await this._load();
 
@@ -67,7 +66,7 @@ export default class RSS {
       this.target.append(html.layout);
 
       if (html.entries.length !== 0) {
-        this.events.emit('vanilla-rss/data', {
+        this.events.emit("vanilla-rss/data", {
           rss: this,
           feed: this.feed,
           entries: this.entries
@@ -77,7 +76,7 @@ export default class RSS {
           ? html.layout
           : html.layout.querySelector("entries");
 
-          this._appendEntries(container, html.entries);
+        this._appendEntries(container, html.entries);
       }
 
       resolve();
@@ -108,9 +107,11 @@ export default class RSS {
     const apiProtocol = `http${this.options.ssl ? "s" : ""}`;
     const apiHost = `${apiProtocol}://${this.options.host}`;
 
-    let apiUrl = `${apiHost}?support=${this.options.support}&version=${
-      this.version
-    }&q=${encodeURIComponent(this.url)}`;
+    const queryParams = {
+      support: this.options.support,
+      version: this.version,
+      q: this.urls.map(u => encodeURIComponent(u)).join(",")
+    };
 
     // set limit to offsetEnd if offset has been set
     if (this.options.offsetStart && this.options.offsetEnd) {
@@ -118,16 +119,21 @@ export default class RSS {
     }
 
     if (this.options.limit !== null) {
-      apiUrl += `&num=${this.options.limit}`;
+      queryParams.num = this.options.limit;
     }
 
     if (this.options.key !== null) {
-      apiUrl += `&key=${this.options.key}`;
+      queryParams.key = this.options.key;
     }
 
     if (this.options.encoding !== null) {
-      apiUrl += `&encoding=${this.options.encoding}`;
+      queryParams.encoding = this.options.encoding;
     }
+
+    const queryString = Object.keys(queryParams)
+      .map(key => `${key}=${queryParams[key]}`)
+      .join("&");
+    const apiUrl = `${apiHost}?${queryString}`;
 
     return this._fetchFeed(apiUrl);
   }
@@ -274,7 +280,6 @@ export default class RSS {
       index: this.entries.indexOf(entry),
       totalEntries: this.entries.length,
 
-      
       teaserImage: (function(entry) {
         try {
           return entry.content.match(/(<img.*?>)/gi)[0];
@@ -285,7 +290,9 @@ export default class RSS {
 
       teaserImageUrl: (function(entry) {
         try {
-          return entry.content.match(/(<img.*?>)/gi)[0].match(/src=["'](.*?)["']/)[1];
+          return entry.content
+            .match(/(<img.*?>)/gi)[0]
+            .match(/src=["'](.*?)["']/)[1];
         } catch (e) {
           return "";
         }
