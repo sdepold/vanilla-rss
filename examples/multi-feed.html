@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>RSS ezypay example</title>
+    <title>RSS accordion example</title>
 
     <!-- Required meta tags -->
     <meta charset="utf-8" />
@@ -32,13 +32,10 @@
       window.onload = function() {
         const rss = new RSS(
           document.querySelector("#rss-feeds"),
-          "http://www.ezypay.co.nz/feed",
-          {
-            limit: 15
-          }
+          ["https://www.contentful.com/blog/feed.xml", "http://www.ebaytechblog.com/feed/"]
         );
 
-        rss.render().then(() => console.log("cool"));
+        rss.render();
       };
     </script>
   </body>
