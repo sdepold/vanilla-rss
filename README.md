@@ -144,6 +144,12 @@ const rss = new RSS(document.querySelector('#rss'), "https://jsfeeds.com/feed", 
   // valid values: https://github.com/ashtuchkin/iconv-lite/wiki/Supported-Encodings
   encoding: 'ISO-8859-1 ',
 
+  // Defined the order of the feed's entries.
+  // Default: undefined (keeps the order of the original feed)
+  // valid values: All entry properties; title, link, content, contentSnippet, publishedDate, categories, author, thumbnail
+  // Order can be reversed by prefixing a dash (-)
+  order: '-publishedDate',
+
   fetchFeed: (apiUrl) => {
     return new Promise((resolve) => {
       $.getJSON(apiUrl, resolve);

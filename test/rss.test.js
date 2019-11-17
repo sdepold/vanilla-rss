@@ -71,6 +71,20 @@ describe("rss", () => {
     });
   });
 
+  it('allows sorting of entries', ()=>{
+    const rss = new RSS(element, "http://mamaskind.de/feed/atom/", {
+      order: 'publishedDate'
+    });
+    const fetchFeedSpy = spy(rss, "_fetchFeed");
+
+    return rss.render().then(() => {
+      expect(fetchFeedSpy.getCall(0).args[0]).to.equal(
+        `https://www.feedrapp.info?support=true&version=${version}&q=http%3A%2F%2Fmamaskind.de%2Ffeed%2Fatom%2F&order=publishedDate`
+      );
+      fetchFeedSpy.restore();
+    });
+  });
+
   it("renders 2 list entries if limit is set to 2", () => {
     return new RSS(element, feedUrl, {
       limit: 2

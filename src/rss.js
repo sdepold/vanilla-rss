@@ -130,6 +130,10 @@ export default class RSS {
       queryParams.encoding = this.options.encoding;
     }
 
+    if (this.options.order) {
+      queryParams.order = this.options.order;
+    }
+
     const queryString = Object.keys(queryParams)
       .map(key => `${key}=${queryParams[key]}`)
       .join("&");
