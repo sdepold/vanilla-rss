@@ -42,7 +42,7 @@ rss.render();
 Through cdnjs:
 
 ```
-
+https://cdnjs.cloudflare.com/ajax/libs/jquery-rss/4.3.0/jquery.rss.min.js
 ```
 
 ## Setup
