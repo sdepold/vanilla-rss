@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Form based example</title>
+
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+    />
+
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <div>
+      <h1>Form based example</h1>
+
+      <section>
+        <p>
+          Use the following input field to define your RSS feed. You can try one
+          (or more) of the following RSS feeds:
+        </p>
+
+        <ul>
+          <li>https://bitte.kaufen/magazin/?feed=rss</li>
+          <li>https://www.ebaytechblog.com/feed/</li>
+        </ul>
+
+        <form id="form" style="width: 100%">
+          <label>
+            RSS feed
+            <input
+              type="text"
+              id="feed"
+              style="width: 400px"
+              value="https://bitte.kaufen/magazin/?feed=rss"
+            />
+          </label>
+
+          <input type="submit" value="Render feed" />
+        </form>
+      </section>
+
+      <br />
+
+      <div id="rss-feeds"></div>
+    </div>
+    <script src="../dist/rss.global.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    <script>
+      window.onload = function () {
+        document
+          .querySelector("#form")
+          .addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            console.log(document.querySelector("#feed").value);
+            document.querySelector("#rss-feeds").innerHTML = "";
+
+            const rss = new RSS(
+              document.querySelector("#rss-feeds"),
+              document.querySelector("#feed").value,
+              {
+                encoding: "UTF-8",
+                limit: 15,
+                tokens: {
+                  showClass: (entry, tokens) =>
+                    tokens.index === 0 ? "show" : "",
+                },
+                layoutTemplate:
+                  '<div class="accordion" id="accordionExample">{entries}</div>',
+                entryTemplate: `<div class="card">
+                    <div class="card-header" id="heading-{index}">
+                        <h2 class="mb-0">
+                        <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse-{index}" aria-expanded="true" aria-controls="collapse-{index}">
+                            {title}
+                        </button>
+                        </h2>
+                    </div>
+        
+                    <div id="collapse-{index}" class="collapse {showClass}" aria-labelledby="heading-{index}" data-parent="#accordionExample">
+                        <div class="card-body">
+                            {bodyPlain}
+                        </div>
+                    </div>
+                </div>`,
+              }
+            );
+
+            rss.render().then(() => console.log("cool"));
+          });
+      };
+    </script>
+  </body>
+</html>
