@@ -11,10 +11,6 @@
 
 An easy-to-use vanilla JavaScript library to read and render RSS feeds.
 
-## 💥 Deprecation warning 💥
-
-Please note this plugin is no longer maintained. The related backend server was also taken down. You can still use it but would have to host the [Feedr](https://github.com/sdepold/feedr) service on your own.
-
 ## Support
 
 Users of [jquery.rss](https://github.com/sdepold/jquery-rss), [vanilla-rss](https://github.com/sdepold/vanilla-rss) or [feedr](https://github.com/sdepold/feedr) have the chance to support funding future developments and covering the costs for the hosting of the RSS lib respective server side companion app [feedr](https://github.com/sdepold/feedr).
