@@ -21,6 +21,8 @@ If you are not interested in supporting the authors of the plugin, then you can 
 
 Thanks in advance!
 
+[<img src="https://api.gitsponsors.com/api/badge/img?id=212647072" height="20">](https://api.gitsponsors.com/api/badge/link?p=gnbgHCdyBFD1ma6iSBLvqp5cTTM4EoBmo/l5LS0izgvEVfS9grkh0bJklu5jlQCwfTWa7nL0nfPKuE1Bus+DJwWy62DQvPtMKls8StqzSzLsXLU+kl0H+629jvGgwAJdZ1gqkeu25fDltWEnZwVEAA==)
+
 ## Installation
 
 Through npm:
